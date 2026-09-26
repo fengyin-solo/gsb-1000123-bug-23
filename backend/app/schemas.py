@@ -28,6 +28,20 @@ class EntryPayload(BaseModel):
     remark: str | None = None
 
 
+class ReagentActionPayload(BaseModel):
+    """试剂耗材动作请求，兼容前端扁平提交和旧版 values.action。"""
+
+    action: str | None = None
+    expected_version: int | None = Field(default=None, alias="expectedVersion")
+    values: dict[str, Any] = Field(default_factory=dict)
+    remark: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+    def action_name(self) -> str:
+        return str(self.action or self.values.get("action") or "").strip()
+
+
 
 class SampleEntry(BaseModel):
     """检测样品明细结构。"""

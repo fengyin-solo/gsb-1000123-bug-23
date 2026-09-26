@@ -3,10 +3,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.schemas import ActionResult, EntryPayload, PageResult
-from app.services.reagent import ReagentService
+from app.auth import Operator, require_reagent_manager
+from app.schemas import ActionResult, EntryPayload, PageResult, ReagentActionPayload
+from app.services.reagent import ReagentService, ReagentStateConflict
 
 router = APIRouter(prefix="/api/reagent", tags=["试剂耗材"])
 
@@ -30,6 +31,13 @@ def list_entries(
     return PageResult(items=items, total=total, page=page, size=size)
 
 
+@router.get("/export")
+def export_entries() -> dict[str, Any]:
+    """导出试剂耗材清单：返回当前过滤条件下的全量数据。"""
+    items, total = service.list_entries(page=1, size=10000)
+    return {"module": "reagent", "total": total, "items": items}
+
+
 @router.get("/{entry_id}", response_model=dict)
 def get_entry(entry_id: int) -> dict:
     """读取单条试剂耗材明细；不存在时给出可读的错误说明。"""
@@ -40,7 +48,10 @@ def get_entry(entry_id: int) -> dict:
 
 
 @router.post("", response_model=ActionResult)
-def create_entry(payload: EntryPayload) -> ActionResult:
+def create_entry(
+    payload: EntryPayload,
+    operator: Operator = Depends(require_reagent_manager),
+) -> ActionResult:
     """登记一条试剂耗材，缺字段时说明原因而不是静默丢弃。"""
     entry, missing = service.create_entry(payload.values)
     if missing:
@@ -49,17 +60,23 @@ def create_entry(payload: EntryPayload) -> ActionResult:
 
 
 @router.post("/{entry_id}/actions", response_model=ActionResult)
-def run_action(entry_id: int, payload: EntryPayload) -> ActionResult:
-    """对单条试剂耗材执行领用试剂、登记用完、标记过期；不允许的动作会被拦下并说明原因。"""
-    action = str(payload.values.get("action") or "").strip()
-    entry, message = service.run_action(entry_id, action)
+def run_action(
+    entry_id: int,
+    payload: ReagentActionPayload,
+    operator: Operator = Depends(require_reagent_manager),
+) -> ActionResult:
+    """保存单条试剂耗材动作；权限、版本、状态任一不通过都不改原记录。"""
+    action = payload.action_name()
+    try:
+        entry, message = service.run_action(
+            entry_id,
+            action,
+            operator_id=operator.operator_id,
+            operator_name=operator.name,
+            expected_version=payload.expected_version,
+        )
+    except ReagentStateConflict as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from exc
     if entry is None:
         return ActionResult(ok=False, message=message)
     return ActionResult(ok=True, message=message, entry=entry)
-
-
-@router.get("/export")
-def export_entries() -> dict[str, Any]:
-    """导出试剂耗材清单：返回当前过滤条件下的全量数据。"""
-    items, total = service.list_entries(page=1, size=10000)
-    return {"module": "reagent", "total": total, "items": items}
