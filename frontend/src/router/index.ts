@@ -6,6 +6,7 @@ const Task = () => import('@/views/task/index.vue')
 const Instrument = () => import('@/views/instrument/index.vue')
 const Calibration = () => import('@/views/calibration/index.vue')
 const Reagent = () => import('@/views/reagent/index.vue')
+const ReagentDetail = () => import('@/views/reagent/detail.vue')
 const Result = () => import('@/views/result/index.vue')
 const Report = () => import('@/views/report/index.vue')
 const Qc = () => import('@/views/qc/index.vue')
@@ -29,6 +30,7 @@ const router = createRouter({
     { path: '/instrument', name: 'instrument', component: Instrument },
     { path: '/calibration', name: 'calibration', component: Calibration },
     { path: '/reagent', name: 'reagent', component: Reagent },
+    { path: '/reagent/:id', name: 'reagent-detail', component: ReagentDetail },
     { path: '/result', name: 'result', component: Result },
     { path: '/report', name: 'report', component: Report },
     { path: '/qc', name: 'qc', component: Qc },

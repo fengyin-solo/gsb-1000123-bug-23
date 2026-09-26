@@ -7,6 +7,7 @@
 from __future__ import annotations
 
 from app.routers import sample as router_sample
+from app.routers import account as router_account
 from app.routers import task as router_task
 from app.routers import instrument as router_instrument
 from app.routers import calibration as router_calibration
@@ -25,4 +26,4 @@ from app.routers import audit as router_audit
 from app.routers import equipment_repair as router_equipment_repair
 from app.routers import document as router_document
 
-ROUTERS = [router_sample, router_task, router_instrument, router_calibration, router_reagent, router_result, router_report, router_qc, router_deviation, router_sample_storage, router_contract, router_staff, router_method, router_environment, router_complain, router_audit, router_equipment_repair, router_document]
+ROUTERS = [router_account, router_sample, router_task, router_instrument, router_calibration, router_reagent, router_result, router_report, router_qc, router_deviation, router_sample_storage, router_contract, router_staff, router_method, router_environment, router_complain, router_audit, router_equipment_repair, router_document]
